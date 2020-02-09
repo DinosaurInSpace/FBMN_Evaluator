@@ -17,7 +17,9 @@ The second case is especially a challenge for downstream visualization (e.g. 'il
 
 Here a simple command line Python script is presented for comparing the relative quality of
 seveal FBMN's is presented.  This script can also be run from a Jupyter notebook.  
+
 FBMN's can be evaluated as a visual plot of retention timeand m/z features assigned via MS/MS.  
+
 As well, figures such as the total number of FBMN features, and FBMN features within a 
 certain retention time and m/z tolerance are reported.
 
