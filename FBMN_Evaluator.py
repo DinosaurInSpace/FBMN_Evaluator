@@ -46,7 +46,9 @@ from datetime import datetime
 import argparse
 import pathlib
 import re
+import glob
 import textwrap
+import os
 from os import path, listdir
 from scipy.stats import gaussian_kde
 
@@ -60,8 +62,8 @@ __email__ = "chrisrath@gmail.com"
 __status__ = "Development"
 
 
-def input_parser(input_file, input_dir):
-    df = pd.read_csv(input_dir + '/' + input_file)
+def input_parser(input_filename):
+    df = pd.read_csv(input_filename)
     col_list = ['row ID', 'row m/z', 'row retention time']
     col_dict = {'row ID': 'id', 'row m/z': 'mz', 'row retention time': 'rt'}
     df = df[col_list].copy(deep=True)
@@ -94,7 +96,7 @@ def tol_features(fbmn_df, mz_tol, rt_tol):
     return features_at_tol
 
 
-def mz_rt_plotter(fbmn_df, mz_tol, rt_tol, tot_feat, tol_feat, input_file):
+def mz_rt_plotter(fbmn_df, mz_tol, rt_tol, tot_feat, tol_feat, input_file, output_filename):
     #https://stackoverflow.com/questions/20105364/how-can-i-make-a-scatter-plot-colored-by-density-in-matplotlib
 
     x = fbmn_df.rt
@@ -105,11 +107,6 @@ def mz_rt_plotter(fbmn_df, mz_tol, rt_tol, tot_feat, tol_feat, input_file):
                   'Tested rt tol (sec.)': rt_tol,
                   'Total features': tot_feat,
                   'Tolerance features': tol_feat}
-
-    filename = str(datetime.now())
-    filename = re.sub('[^0-9a-zA-Z]+', '_', filename)
-    filename = 'reports/' + filename
-    print(filename)
 
     # Calculate the point density
     xy = np.vstack([x, y])
@@ -126,11 +123,11 @@ def mz_rt_plotter(fbmn_df, mz_tol, rt_tol, tot_feat, tol_feat, input_file):
     ax.set_title("\n".join(textwrap.wrap(str(title_dict), 60)))
     plt.tight_layout()
 
-    plt.savefig(filename)
-    plt.show()
+    plt.savefig(output_filename)
+    #plt.show()
     plt.close()
 
-    return filename
+    return output_filename
 
 
 def filename_path_timestamp():
@@ -142,45 +139,32 @@ def filename_path_timestamp():
     return filename
 
 
-def fbmn_main(input_dir, mz_tol, rt_tol):
-    start_time = time.time()
+def fbmn_evaluate(input_filename, output_filename, mz_tol=20, rt_tol=20):
     output_dict = {}
 
-    if path.isdir(input_dir) and listdir(path=input_dir) != 0:
-        for input_file in listdir(input_dir):
-            fbmn_df = input_parser(input_file, input_dir)
-            tot_feat = fbmn_df.shape[0]
-            tol_feat = tol_features(fbmn_df, mz_tol, rt_tol)
-            plot_path = mz_rt_plotter(fbmn_df, mz_tol, rt_tol, tot_feat, tol_feat, input_file)
+    fbmn_df = input_parser(input_filename)
+    tot_feat = fbmn_df.shape[0]
+    tol_feat = tol_features(fbmn_df, mz_tol, rt_tol)
+    plot_path = mz_rt_plotter(fbmn_df, mz_tol, rt_tol, tot_feat, tol_feat, input_filename, output_filename)
 
-            output_dict[input_file] = {'mz_tol_ppm': mz_tol,
-                                       'rt_tol_sec': rt_tol,
-                                       'total_feat': tot_feat,
-                                       'tolerance_feat': tol_feat,
-                                       'plot_path': plot_path}
+def main():
+    ### Main ###
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument("--path", default='networks/', type=str, help="Directory with GNPS output")
+    parser.add_argument("--mztol", default=20, type=int, help="Mass error in ppm")
+    parser.add_argument("--rttol", default=20, type=int, help="RT tolerance in seconds")
+    parser.add_argument("--output_path", default='reports/', type=str, help="output directory")
+    args = parser.parse_args()
 
-        output_df = pd.DataFrame(output_dict)
-        path_to_df = filename_path_timestamp()
-        output_df.to_pickle(path_to_df + '.pickle')
-
-        elapsed_time = time.time() - start_time
-        print('Elapsed time:\n', elapsed_time, '\nExecuted without error\n')
-        print(output_df)
-        print(path_to_df)
-
-        return (output_df, path_to_df)
-
-    else:
+    input_filenames = glob.glob(os.path.join(args.path, "*"))
+    if len(input_filenames):
         print('Incorrect input directory or empty directory!')
         exit(1)
 
+    for input_filename in input_filenames:
+        output_filename = os.path.join(args.output_path, os.path.basename(input_filename) + ".png")
+        fbmn_evaluate(input_filename, output_filename)
 
-### Main ###
-parser = argparse.ArgumentParser(description='')
-parser.add_argument("--path", default='networks/', type=str, help="Directory with GNPS output")
-parser.add_argument("--mztol", default=20, type=int, help="Mass error in ppm")
-parser.add_argument("--rttol", default=20, type=int, help="RT tolerance in seconds")
-args = parser.parse_args()
 
-# Main loop
-fbmn_main(args.path, args.mztol, args.rttol)
+if __name__ == "__main__":
+    main()
