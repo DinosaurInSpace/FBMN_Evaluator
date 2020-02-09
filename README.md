@@ -1,5 +1,7 @@
 # FBMN_Evaluator
 
+![unittest](https://github.com/mwang87/FBMN_Evaluator/workflows/unittest/badge.svg)
+
 Feature-Based Molecular Networking (FBMN) is a powerful unsupervised approach for organizing
 LCMS data bases on retention time, MS1, and MS2 over multiple samples.
 
