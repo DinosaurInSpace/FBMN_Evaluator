@@ -41,3 +41,24 @@ RETENTION_TIME_TOL_IN_SEC
 Output:
 
 Path to plots, number of FBMN features, number of FBMN features within mz/rt tolerance.
+
+## Dependencies
+
+Can be found in requirements.txt
+
+
+## Demonstration Run
+
+There are example files in the networks folder, to try it out, simply run 
+
+```
+python ./FBMN_Evaluator.py
+```
+
+and output will appear in the reports folder as png files with the same name prefix of the quantification table in the networks folder. 
+
+## Testing
+
+We have basic unit testing that can be run in the test folder:
+
+``` nose2 -v ``` 
